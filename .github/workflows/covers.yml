@@ -1,0 +1,49 @@
+name: Covers
+
+on:
+  schedule:
+    # Every three hours. A run stops after 50 minutes and picks up where it left off.
+    - cron: "23 */3 * * *"
+    # GitHub disables schedules in public repositories after 60 days
+    # without commits; this monthly run turns the schedule back on.
+    - cron: "41 4 1 * *"
+  workflow_dispatch:
+
+concurrency: covers
+
+# Nothing here needs to write to the repository.
+permissions:
+  contents: read
+
+jobs:
+  covers:
+    if: github.event.schedule != '41 4 1 * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 58
+    steps:
+      # Pinned to exact commits: the run holds the bucket keys.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: node src/run.mjs
+        env:
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          COVERS_JOB_KEY: ${{ secrets.COVERS_JOB_KEY }}
+
+  keepalive:
+    if: github.event.schedule == '41 4 1 * *'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/covers.yml/enable"
+        env:
+          GH_TOKEN: ${{ github.token }}

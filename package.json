@@ -1,0 +1,19 @@
+{
+  "name": "titld-covers",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Copies Titld's book and comic covers into its R2 bucket, compressed to WebP, on a schedule.",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "start": "node src/run.mjs",
+    "sample": "node src/sample.mjs"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "3.700.0",
+    "sharp": "0.33.5"
+  }
+}
